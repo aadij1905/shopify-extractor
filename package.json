@@ -1,0 +1,14 @@
+{
+  "name": "shopify-embedded-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0"
+  }
+}
