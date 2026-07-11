@@ -35,7 +35,8 @@ async function runShopifyQLQuery(shopDomain, accessToken, queryString) {
     return runShopifyQLQuery(shopDomain, accessToken, queryString);
   }
   if (!response.ok) {
-    throw new Error(`ShopifyQL request failed: HTTP ${response.status}`);
+    const body = await response.text().catch(() => "");
+    throw new Error(`ShopifyQL request failed: HTTP ${response.status} ${body}`);
   }
 
   const data = await response.json();
