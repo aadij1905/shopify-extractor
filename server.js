@@ -183,9 +183,9 @@ app.post("/api/sync", async (req, res) => {
   if (!record) return res.status(404).json({ error: "Shop not installed" });
 
   try {
-    const metrics = await syncShop(shop, record.access_token, websiteUrl);
+    const { metrics, errors } = await syncShop(shop, record.access_token, websiteUrl);
     updateLastSynced(shop);
-    res.json({ success: true, metrics });
+    res.json({ success: true, metrics, errors });
   } catch (err) {
     console.error(`Sync failed for ${shop}:`, err.message);
     res.status(500).json({ success: false, error: err.message });

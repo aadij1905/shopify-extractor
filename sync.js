@@ -35,7 +35,7 @@ async function syncShop(shopDomain, accessToken, websiteUrlOverride) {
     throw new Error(`Analytics Service responded with HTTP ${res.status}`);
   }
 
-  return data.metrics;
+  return { metrics: data.metrics, errors: data.errors };
 }
 
 module.exports = { syncShop };
