@@ -199,6 +199,28 @@ app.post("/api/sync", async (req, res) => {
   }
 });
 
+// ── Debug: analytics query output (Postman-testable) ─────────────────────────
+// GET /api/debug/queries?shop=<domain>
+// Runs the ShopifyQL queries and returns the raw parsed rows per query, plus
+// whatever failed. Unlike /api/sync, this does NOT POST to
+// ANALYTICS_SERVICE_URL — it's for inspecting query output directly.
+app.get("/api/debug/queries", async (req, res) => {
+  const { shop } = req.query;
+  if (!shop) return res.status(400).json({ error: "shop parameter required" });
+
+  const record = getShop(shop);
+  if (!record) return res.status(404).json({ error: "Shop not installed" });
+
+  try {
+    const accessToken = await getValidAccessToken(shop);
+    const { extractAll } = require("./extractor/extractAll");
+    const data = await extractAll(shop, accessToken);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Debug: theme code extractor (Postman-testable) ───────────────────────────
 // GET /api/debug/theme-code?shop=<domain>&page=/products/whatever
 // Returns the real theme files that render `page`. Requires the store's token
