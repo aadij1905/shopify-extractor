@@ -224,6 +224,7 @@ app.get("/api/debug/theme-code", async (req, res) => {
       themeName: result.themeName,
       themeId: result.themeId,
       template: result.template,
+      templateSuffix: result.templateSuffix,
       truncated: result.truncated,
       files: result.files.map((f) => ({ key: f.key, bytes: f.bytes, content: f.content })),
     });

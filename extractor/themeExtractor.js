@@ -90,6 +90,98 @@ function templateForPage(affectedPage) {
   return "product";
 }
 
+// ── Alternate-template detection ────────────────────────────────────────────
+// Merchants can assign a specific product/collection/page/article a custom
+// "alternate template" (templates/{type}.{suffix}.json) instead of the
+// theme's default. templateForPage() only looks at the URL shape, so without
+// this a finding on such a resource would silently pull the WRONG file.
+
+async function adminGraphQL(shopDomain, accessToken, query, variables) {
+  const url = `https://${shopDomain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": accessToken,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data.errors ? null : data.data;
+}
+
+// {type, handle} for the resource a page URL points at, or null for template
+// types with no assignable alternate template (index, cart, search, ...).
+function resourceHandleFromPage(base, affectedPage) {
+  const p = affectedPage || "";
+  if (base === "product") {
+    const m = p.match(/\/products\/([^/?]+)/);
+    return m ? { type: "product", handle: m[1] } : null;
+  }
+  if (base === "collection") {
+    const m = p.match(/\/collections\/([^/?]+)/);
+    return m ? { type: "collection", handle: m[1] } : null;
+  }
+  if (base === "page") {
+    const m = p.match(/\/pages\/([^/?]+)/);
+    return m ? { type: "page", handle: m[1] } : null;
+  }
+  if (base === "article") {
+    const m = p.match(/\/blogs\/[^/]+\/([^/?]+)/);
+    return m ? { type: "article", handle: m[1] } : null;
+  }
+  return null;
+}
+
+// Best-effort: any failure (bad handle, resource deleted, API hiccup) just
+// falls back to the default template rather than breaking extraction.
+async function getTemplateSuffix(shopDomain, accessToken, resource) {
+  if (!resource) return null;
+  const { type, handle } = resource;
+  try {
+    if (type === "product") {
+      const data = await adminGraphQL(
+        shopDomain,
+        accessToken,
+        `query($handle: String!) { productByHandle(handle: $handle) { templateSuffix } }`,
+        { handle }
+      );
+      return data?.productByHandle?.templateSuffix || null;
+    }
+    if (type === "collection") {
+      const data = await adminGraphQL(
+        shopDomain,
+        accessToken,
+        `query($handle: String!) { collectionByHandle(handle: $handle) { templateSuffix } }`,
+        { handle }
+      );
+      return data?.collectionByHandle?.templateSuffix || null;
+    }
+    if (type === "page") {
+      const data = await adminGraphQL(
+        shopDomain,
+        accessToken,
+        `query($q: String!) { pages(first: 1, query: $q) { edges { node { templateSuffix } } } }`,
+        { q: `handle:${handle}` }
+      );
+      return data?.pages?.edges?.[0]?.node?.templateSuffix || null;
+    }
+    if (type === "article") {
+      const data = await adminGraphQL(
+        shopDomain,
+        accessToken,
+        `query($q: String!) { articles(first: 1, query: $q) { edges { node { templateSuffix } } } }`,
+        { q: `handle:${handle}` }
+      );
+      return data?.articles?.edges?.[0]?.node?.templateSuffix || null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 // Extract the section `type`s an OS 2.0 JSON template renders. Legacy themes
 // use a .liquid template instead (no section graph) — handled by the caller.
 function sectionTypesFromJsonTemplate(jsonString) {
@@ -134,6 +226,7 @@ function snippetNamesFromLiquid(content) {
  *
  * @returns {{
  *   themeId: number, themeName: string, template: string,
+ *   templateSuffix: string|null,
  *   files: Array<{ key: string, content: string, bytes: number }>,
  *   truncated: boolean
  * }}
@@ -149,6 +242,25 @@ async function extractThemeCodeForPage(
   const files = [];
   const fetchedKeys = new Set();
   let truncated = false;
+
+  // If this specific resource uses an alternate template, prefer it — falling
+  // back to the theme's default {base}.json/.liquid if that file doesn't
+  // actually exist on the published theme (e.g. suffix from a stale/older
+  // theme assignment).
+  const resource = resourceHandleFromPage(base, affectedPage);
+  const templateSuffix = await getTemplateSuffix(shopDomain, accessToken, resource);
+  const templateAsset = async (ext) => {
+    if (templateSuffix) {
+      const withSuffix = await getAsset(
+        shopDomain,
+        accessToken,
+        theme.id,
+        `templates/${base}.${templateSuffix}.${ext}`
+      );
+      if (withSuffix) return withSuffix;
+    }
+    return getAsset(shopDomain, accessToken, theme.id, `templates/${base}.${ext}`);
+  };
 
   const takeFile = (asset) => {
     if (!asset || fetchedKeys.has(asset.key)) return null;
@@ -185,7 +297,7 @@ async function extractThemeCodeForPage(
   };
 
   // OS 2.0 JSON template first; fall back to a legacy .liquid template.
-  const jsonTpl = await getAsset(shopDomain, accessToken, theme.id, `templates/${base}.json`);
+  const jsonTpl = await templateAsset("json");
   if (jsonTpl) {
     const tplContent = takeFile(jsonTpl);
     const types = sectionTypesFromJsonTemplate(jsonTpl.content);
@@ -198,12 +310,7 @@ async function extractThemeCodeForPage(
     }
     if (tplContent) await pullSnippets(tplContent);
   } else {
-    const liquidTpl = await getAsset(
-      shopDomain,
-      accessToken,
-      theme.id,
-      `templates/${base}.liquid`
-    );
+    const liquidTpl = await templateAsset("liquid");
     const taken = takeFile(liquidTpl);
     if (taken) await pullSnippets(taken);
   }
@@ -218,6 +325,7 @@ async function extractThemeCodeForPage(
     themeId: theme.id,
     themeName: theme.name,
     template: base,
+    templateSuffix: templateSuffix || null,
     files,
     truncated,
   };
@@ -229,6 +337,8 @@ module.exports = {
   getAsset,
   extractThemeCodeForPage,
   templateForPage,
+  resourceHandleFromPage,
+  getTemplateSuffix,
   sectionTypesFromJsonTemplate,
   snippetNamesFromLiquid,
   trimForPrompt,
