@@ -15,14 +15,43 @@ db.exec(`
   )
 `);
 
-function upsertShop(shopDomain, accessToken) {
+// Added for expiring-token support (Shopify now rejects non-expiring tokens
+// on some Admin API surfaces, e.g. ShopifyQL). SQLite has no
+// "ADD COLUMN IF NOT EXISTS", so migrate existing shops.db files by hand.
+const shopColumns = db.prepare("PRAGMA table_info(shops)").all().map((c) => c.name);
+for (const [column, type] of [
+  ["refresh_token", "TEXT"],
+  ["access_token_expires_at", "TEXT"],
+  ["refresh_token_expires_at", "TEXT"],
+]) {
+  if (!shopColumns.includes(column)) {
+    db.exec(`ALTER TABLE shops ADD COLUMN ${column} ${type}`);
+  }
+}
+
+function upsertShop(shopDomain, accessToken, { refreshToken, expiresIn, refreshTokenExpiresIn } = {}) {
+  const now = Date.now();
+  const accessTokenExpiresAt = expiresIn ? new Date(now + expiresIn * 1000).toISOString() : null;
+  const refreshTokenExpiresAt = refreshTokenExpiresIn
+    ? new Date(now + refreshTokenExpiresIn * 1000).toISOString()
+    : null;
   db.prepare(`
-    INSERT INTO shops (shop_domain, access_token, installed_at)
-    VALUES (?, ?, ?)
+    INSERT INTO shops (shop_domain, access_token, refresh_token, access_token_expires_at, refresh_token_expires_at, installed_at)
+    VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(shop_domain) DO UPDATE SET
       access_token = excluded.access_token,
+      refresh_token = excluded.refresh_token,
+      access_token_expires_at = excluded.access_token_expires_at,
+      refresh_token_expires_at = excluded.refresh_token_expires_at,
       installed_at = excluded.installed_at
-  `).run(shopDomain, accessToken, new Date().toISOString());
+  `).run(
+    shopDomain,
+    accessToken,
+    refreshToken || null,
+    accessTokenExpiresAt,
+    refreshTokenExpiresAt,
+    new Date(now).toISOString()
+  );
 }
 
 function getShop(shopDomain) {

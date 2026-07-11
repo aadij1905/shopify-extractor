@@ -6,6 +6,7 @@ const path = require("path");
 const { verifyHmac } = require("./verifyHmac");
 const { verifyWebhookHmac } = require("./webhookVerify");
 const { upsertShop, getShop, updateLastSynced, deleteShop } = require("./db");
+const { getValidAccessToken } = require("./shopAuth");
 const { syncShop } = require("./sync");
 
 const {
@@ -130,15 +131,20 @@ app.get("/auth/callback", async (req, res) => {
       client_id: SHOPIFY_CLIENT_ID,
       client_secret: SHOPIFY_CLIENT_SECRET,
       code,
+      expiring: 1, // non-expiring tokens are rejected by ShopifyQL/GraphQL
     }),
   });
 
-  const { access_token } = await tokenRes.json();
+  const { access_token, refresh_token, expires_in, refresh_token_expires_in } = await tokenRes.json();
   if (!access_token) {
     return res.status(500).send("Failed to get access token from Shopify");
   }
 
-  upsertShop(shop, access_token);
+  upsertShop(shop, access_token, {
+    refreshToken: refresh_token,
+    expiresIn: expires_in,
+    refreshTokenExpiresIn: refresh_token_expires_in,
+  });
   console.log(`Installed: ${shop}`);
 
   // Best-effort: app/uninstalled isn't a mandatory compliance topic (those
@@ -183,7 +189,8 @@ app.post("/api/sync", async (req, res) => {
   if (!record) return res.status(404).json({ error: "Shop not installed" });
 
   try {
-    const { metrics, errors } = await syncShop(shop, record.access_token, websiteUrl);
+    const accessToken = await getValidAccessToken(shop);
+    const { metrics, errors } = await syncShop(shop, accessToken, websiteUrl);
     updateLastSynced(shop);
     res.json({ success: true, metrics, errors });
   } catch (err) {
@@ -204,10 +211,11 @@ app.get("/api/debug/theme-code", async (req, res) => {
   if (!record) return res.status(404).json({ error: "Shop not installed" });
 
   try {
+    const accessToken = await getValidAccessToken(shop);
     const { extractThemeCodeForPage } = require("./extractor/themeExtractor");
     const result = await extractThemeCodeForPage(
       shop,
-      record.access_token,
+      accessToken,
       page || "/products/sample"
     );
     res.json({
