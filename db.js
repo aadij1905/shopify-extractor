@@ -1,7 +1,10 @@
 const Database = require("better-sqlite3");
 const path = require("path");
 
-const db = new Database(path.join(__dirname, "shops.db"));
+// DB_PATH must point at a mounted persistent volume in production (e.g.
+// Railway wipes anything outside one on every redeploy) — default to a local
+// file only for dev, where the app directory itself persists.
+const db = new Database(process.env.DB_PATH || path.join(__dirname, "shops.db"));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS shops (
@@ -31,4 +34,10 @@ function updateLastSynced(shopDomain) {
     .run(new Date().toISOString(), shopDomain);
 }
 
-module.exports = { upsertShop, getShop, updateLastSynced };
+// Used by the app/uninstalled and shop/redact webhooks — an uninstalled
+// shop's token is dead anyway, and shop/redact requires we not retain it.
+function deleteShop(shopDomain) {
+  db.prepare("DELETE FROM shops WHERE shop_domain = ?").run(shopDomain);
+}
+
+module.exports = { upsertShop, getShop, updateLastSynced, deleteShop };

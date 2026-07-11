@@ -12,7 +12,8 @@ const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 const SHOP = process.env.SHOPIFY_SHOP_DOMAIN;
 const PORT = 3000;
 const REDIRECT_URI = `http://localhost:${PORT}/callback`;
-const SCOPE = "read_analytics";
+// Pull scopes from .env so adding read_themes there flows through here too.
+const SCOPE = process.env.SHOPIFY_SCOPES || "read_analytics,read_themes";
 
 if (!CLIENT_ID || !CLIENT_SECRET || !SHOP) {
   console.error("Missing SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, or SHOPIFY_SHOP_DOMAIN in .env");
@@ -47,15 +48,22 @@ const server = http.createServer(async (req, res) => {
     const token = data.access_token;
 
     if (token) {
+      // Persist to the same SQLite db the server/debug route reads, so the
+      // new (read_themes-capable) token is used immediately — no manual paste.
+      try {
+        const { upsertShop } = require("../db");
+        upsertShop(SHOP, token);
+        console.log(`\n✓ Token saved to db for ${SHOP} (scopes: ${SCOPE})`);
+      } catch (e) {
+        console.error("Could not save token to db:", e.message);
+      }
       res.end(`
         <h2>Success!</h2>
-        <p>Access token:</p>
-        <code>${token}</code>
-        <p>Copy this into your .env as SHOPIFY_ACCESS_TOKEN</p>
+        <p>Token saved to the app database for <code>${SHOP}</code>.</p>
+        <p>Scopes: <code>${SCOPE}</code></p>
+        <p>You can now hit <code>/api/debug/theme-code</code> in Postman.</p>
       `);
-      console.log("\n✓ Access token received:");
-      console.log(`\nSHOPIFY_ACCESS_TOKEN=${token}\n`);
-      console.log("Paste this into your .env file.");
+      console.log("\n✓ Access token received and stored.");
     } else {
       res.end(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
       console.error("Token exchange failed:", data);
