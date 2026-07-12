@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>gl_extractor — Privacy Policy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1a1a1a; }
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.1rem; margin-top: 2rem; }
+  a { color: #2c6ecb; }
+</style>
+</head>
+<body>
+
+<h1>gl_extractor — Privacy Policy</h1>
+<p>Last updated: July 12, 2026</p>
+
+<p>gl_extractor is an app for Shopify merchants that (1) reads a store's published theme code so it can be reviewed and patched by an AI assistant, and (2) runs store analytics queries via Shopify's ShopifyQL API to surface performance metrics inside the app.</p>
+
+<h2>What we collect</h2>
+<ul>
+  <li><strong>Store identifier</strong> (your <code>myshopify.com</code> domain).</li>
+  <li><strong>OAuth access and refresh tokens</strong> issued by Shopify when you install the app, used only to call the Shopify Admin API on your store's behalf.</li>
+  <li><strong>Theme code</strong> (Liquid templates, sections, snippets) for the specific pages you ask the app to analyze.</li>
+  <li><strong>Aggregate store analytics</strong> (e.g. sessions, sales, conversion rate) returned by ShopifyQL. We do not request or store individual customer records, names, emails, or order-level personal data.</li>
+</ul>
+
+<h2>How we use it</h2>
+<p>Theme code and aggregate analytics are used solely to generate review feedback and code suggestions for the merchant who installed the app. Extracted code and metrics may be passed to our internal AI analysis service to generate those suggestions; they are not sold, shared with advertisers, or used for any purpose beyond that.</p>
+
+<h2>Storage and security</h2>
+<p>Access and refresh tokens are encrypted at rest using AES-256-GCM before being stored in our database. Data is transmitted exclusively over HTTPS. Tokens and store data are deleted immediately when a merchant uninstalls the app, per Shopify's mandatory <code>app/uninstalled</code> and <code>shop/redact</code> webhooks.</p>
+
+<h2>Retention</h2>
+<p>We retain store data only for as long as the app remains installed on that store. Uninstalling the app triggers deletion of all stored tokens and associated data.</p>
+
+<h2>Your rights</h2>
+<p>Merchants can request deletion of their data at any time by uninstalling the app, or by contacting us directly using the details below. We honor Shopify's mandatory GDPR compliance webhooks (<code>customers/data_request</code>, <code>customers/redact</code>, <code>shop/redact</code>).</p>
+
+<h2>Contact</h2>
+<p>Questions about this policy or your data: <a href="mailto:19aadijain@gmail.com">19aadijain@gmail.com</a></p>
+
+</body>
+</html>

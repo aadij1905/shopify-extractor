@@ -1,5 +1,6 @@
 const Database = require("better-sqlite3");
 const path = require("path");
+const { encrypt, decrypt } = require("./crypto");
 
 // DB_PATH must point at a mounted persistent volume in production (e.g.
 // Railway wipes anything outside one on every redeploy) — default to a local
@@ -46,8 +47,8 @@ function upsertShop(shopDomain, accessToken, { refreshToken, expiresIn, refreshT
       installed_at = excluded.installed_at
   `).run(
     shopDomain,
-    accessToken,
-    refreshToken || null,
+    encrypt(accessToken),
+    refreshToken ? encrypt(refreshToken) : null,
     accessTokenExpiresAt,
     refreshTokenExpiresAt,
     new Date(now).toISOString()
@@ -55,7 +56,9 @@ function upsertShop(shopDomain, accessToken, { refreshToken, expiresIn, refreshT
 }
 
 function getShop(shopDomain) {
-  return db.prepare("SELECT * FROM shops WHERE shop_domain = ?").get(shopDomain);
+  const row = db.prepare("SELECT * FROM shops WHERE shop_domain = ?").get(shopDomain);
+  if (!row) return row;
+  return { ...row, access_token: decrypt(row.access_token), refresh_token: decrypt(row.refresh_token) };
 }
 
 function updateLastSynced(shopDomain) {

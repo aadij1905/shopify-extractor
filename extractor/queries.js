@@ -15,7 +15,7 @@ const QUERIES = {
   // Revenue: sales, orders, AOV by day.
   sales: `
     FROM sales
-    SHOW total_sales, total_orders, average_order_value
+    SHOW total_sales, orders, average_order_value
     GROUP BY day
     SINCE -7d UNTIL today
     ORDER BY day ASC
