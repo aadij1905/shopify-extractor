@@ -40,6 +40,9 @@ async function runShopifyQLQuery(shopDomain, accessToken, queryString) {
   }
 
   const data = await response.json();
+  if (data.errors?.length) {
+    throw new Error(`ShopifyQL GraphQL error: ${JSON.stringify(data.errors)}`);
+  }
   const result = data.data?.shopifyqlQuery;
   if (result?.parseErrors?.length) {
     throw new Error(`ShopifyQL parse error: ${JSON.stringify(result.parseErrors)}`);
