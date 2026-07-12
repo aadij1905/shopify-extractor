@@ -14,7 +14,7 @@ async function getWebsiteUrl(shopDomain, accessToken) {
   }
 }
 
-async function syncShop(shopDomain, accessToken, websiteUrlOverride) {
+async function syncShop(shopDomain, accessToken, websiteUrlOverride, storePassword) {
   // A caller-supplied website URL (from the dashboard) wins; otherwise derive it
   // from the shop's Shopify domain. The Analytics Service decides whether to
   // crawl based on whether this ends up non-empty.
@@ -23,7 +23,7 @@ async function syncShop(shopDomain, accessToken, websiteUrlOverride) {
       ? websiteUrlOverride.trim()
       : await getWebsiteUrl(shopDomain, accessToken);
   console.log(`Website URL for ${shopDomain}: ${websiteUrl}`);
-  const data = await extractAll(shopDomain, accessToken, websiteUrl);
+  const data = await extractAll(shopDomain, accessToken, websiteUrl, storePassword || null);
 
   const res = await fetch(process.env.ANALYTICS_SERVICE_URL, {
     method: "POST",

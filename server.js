@@ -183,6 +183,9 @@ async function registerUninstallWebhook(shop, accessToken) {
 // ── Sync endpoint ────────────────────────────────────────────────────────────
 app.post("/api/sync", async (req, res) => {
   const { shop, websiteUrl } = req.query;
+  // storePassword travels in the JSON body, not the query string — query
+  // strings tend to land in access logs and proxy logs, a body doesn't.
+  const { storePassword } = req.body || {};
   if (!shop) return res.status(400).json({ error: "shop parameter required" });
 
   const record = getShop(shop);
@@ -190,7 +193,7 @@ app.post("/api/sync", async (req, res) => {
 
   try {
     const accessToken = await getValidAccessToken(shop);
-    const { metrics, errors } = await syncShop(shop, accessToken, websiteUrl);
+    const { metrics, errors } = await syncShop(shop, accessToken, websiteUrl, storePassword);
     updateLastSynced(shop);
     res.json({ success: true, metrics, errors });
   } catch (err) {
