@@ -7,12 +7,9 @@ async function runShopifyQLQuery(shopDomain, accessToken, queryString) {
     query: `
       query ShopifyQLQuery($query: String!) {
         shopifyqlQuery(query: $query) {
-          __typename
-          ... on TableResponse {
-            tableData {
-              columns { name dataType displayName }
-              rowData
-            }
+          tableData {
+            columns { name dataType displayName }
+            rows
           }
           parseErrors
         }
@@ -51,9 +48,10 @@ async function runShopifyQLQuery(shopDomain, accessToken, queryString) {
 }
 
 function parseTableData(tableData) {
-  if (!tableData || !tableData.columns || !tableData.rowData) return [];
+  if (!tableData || !tableData.columns || !tableData.rows) return [];
   const colNames = tableData.columns.map((c) => c.name);
-  return tableData.rowData.map((row) => {
+  return tableData.rows.map((row) => {
+    if (!Array.isArray(row)) return row; // already an object keyed by column name
     const obj = {};
     colNames.forEach((name, i) => { obj[name] = row[i]; });
     return obj;
