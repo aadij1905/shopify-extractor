@@ -4,7 +4,7 @@ application_url = "https://shopify-extractor-production.up.railway.app"
 embedded = true
 
 [access_scopes]
-scopes = "read_analytics,read_themes"
+scopes = "read_reports,read_themes"
 
 [auth]
 redirect_urls = [ "https://shopify-extractor-production.up.railway.app/auth/callback" ]

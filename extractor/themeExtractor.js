@@ -5,7 +5,7 @@
 // patch against the merchant's REAL code instead of assuming Dawn.
 //
 // Requires the `read_themes` OAuth scope. Add it to SHOPIFY_SCOPES and have
-// merchants re-authorize; a token issued for read_analytics alone will get
+// merchants re-authorize; a token issued for read_reports alone will get
 // 403 on these endpoints.
 //
 // Token strategy: we never download the whole theme (~300 files, ~1–2M

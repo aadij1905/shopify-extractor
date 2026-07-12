@@ -13,7 +13,7 @@ const SHOP = process.env.SHOPIFY_SHOP_DOMAIN;
 const PORT = 3000;
 const REDIRECT_URI = `http://localhost:${PORT}/callback`;
 // Pull scopes from .env so adding read_themes there flows through here too.
-const SCOPE = process.env.SHOPIFY_SCOPES || "read_analytics,read_themes";
+const SCOPE = process.env.SHOPIFY_SCOPES || "read_reports,read_themes";
 
 if (!CLIENT_ID || !CLIENT_SECRET || !SHOP) {
   console.error("Missing SHOPIFY_CLIENT_ID, SHOPIFY_CLIENT_SECRET, or SHOPIFY_SHOP_DOMAIN in .env");
