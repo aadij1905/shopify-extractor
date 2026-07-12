@@ -32,6 +32,12 @@
 <h2>Storage and security</h2>
 <p>Access and refresh tokens are encrypted at rest using AES-256-GCM before being stored in our database. Data is transmitted exclusively over HTTPS. Tokens and store data are deleted immediately when a merchant uninstalls the app, per Shopify's mandatory <code>app/uninstalled</code> and <code>shop/redact</code> webhooks.</p>
 
+<h2>Data loss prevention</h2>
+<p>We limit what could ever be lost or exposed by minimizing what we store in the first place: only a store's domain and encrypted OAuth tokens, never customer PII. Tokens are encrypted at rest (AES-256-GCM) so a raw copy of the database is not usable on its own. Data is held on a managed, persistent volume rather than ephemeral storage, and production access is restricted to the app's single developer through Railway and Shopify Partner account authentication. Because no unrecoverable customer data is stored, the practical failure mode of losing our database is a merchant reinstalling the app to reissue tokens — not loss of customer information.</p>
+
+<h2>Security incident response</h2>
+<p>If a security incident is discovered (e.g. suspected unauthorized access to our database or hosting account), we will: (1) rotate the affected credentials — API secrets, encryption keys, and hosting account passwords — immediately; (2) revoke and force re-authentication of OAuth tokens for affected stores; (3) notify affected merchants at the contact email on file within a reasonable timeframe once the scope of the incident is understood; and (4) document the incident and the fix applied to prevent recurrence. Given we do not store customer PII, the primary asset to protect in any incident is store OAuth tokens, which can be invalidated and reissued without impact to merchants' underlying data.</p>
+
 <h2>Retention</h2>
 <p>We retain store data only for as long as the app remains installed on that store. Uninstalling the app triggers deletion of all stored tokens and associated data.</p>
 
