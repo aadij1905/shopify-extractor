@@ -1,11 +1,22 @@
 // extractor/queries.js
 
+// Single source of truth for which session population EVERY `FROM sessions`
+// query counts. Applying it uniformly keeps overview, pages, traffic, devices,
+// funnel and checkout all reporting on the same universe — previously only the
+// funnel filtered ('human','bot'), so its numbers disagreed with every other
+// card and only matched a Shopify report whose Human/Bot filter happened to
+// line up. Human-only is the conventional CRO baseline (bots don't shop);
+// change this ONE line to IN ('human', 'bot') to include bot traffic
+// everywhere at once.
+const SESSION_FILTER = "WHERE human_or_bot_session IN ('human')";
+
 const QUERIES = {
   // Overview: sessions, conversion, bounce — site-wide with
   // period-over-period comparison. All fields confirmed real.
   overview: `
     FROM sessions
     SHOW sessions, conversion_rate, bounce_rate
+    ${SESSION_FILTER}
     TIMESERIES day WITH TOTALS, PERCENT_CHANGE
     SINCE -7d UNTIL today
     COMPARE TO previous_period
@@ -26,6 +37,7 @@ const QUERIES = {
   pages: `
     FROM sessions
     SHOW sessions, conversion_rate, bounce_rate
+    ${SESSION_FILTER}
     GROUP BY landing_page_path WITH TOTALS
     SINCE -7d UNTIL today
     ORDER BY sessions DESC
@@ -37,6 +49,7 @@ const QUERIES = {
   trafficSources: `
     FROM sessions
     SHOW sessions, conversion_rate, bounce_rate
+    ${SESSION_FILTER}
     GROUP BY referrer_source
     SINCE -7d UNTIL today
   `,
@@ -48,6 +61,7 @@ const QUERIES = {
   devices: `
     FROM sessions
     SHOW sessions, online_store_visitors
+    ${SESSION_FILTER}
     GROUP BY session_device_type
     SINCE -7d UNTIL today
   `,
@@ -61,7 +75,7 @@ const QUERIES = {
     SHOW sessions, sessions_with_cart_additions,
       sessions_that_reached_checkout,
       sessions_that_completed_checkout, conversion_rate
-    WHERE human_or_bot_session IN ('human', 'bot')
+    ${SESSION_FILTER}
     TIMESERIES day WITH TOTALS, PERCENT_CHANGE
     SINCE -7d UNTIL today
     COMPARE TO previous_period
@@ -74,6 +88,7 @@ const QUERIES = {
   checkoutConversion: `
     FROM sessions
     SHOW checkout_conversion_rate
+    ${SESSION_FILTER}
     TIMESERIES day
     SINCE -7d UNTIL today
   `,
