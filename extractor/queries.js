@@ -5,10 +5,10 @@
 // funnel and checkout all reporting on the same universe — previously only the
 // funnel filtered ('human','bot'), so its numbers disagreed with every other
 // card and only matched a Shopify report whose Human/Bot filter happened to
-// line up. Human-only is the conventional CRO baseline (bots don't shop);
-// change this ONE line to IN ('human', 'bot') to include bot traffic
-// everywhere at once.
-const SESSION_FILTER = "WHERE human_or_bot_session IN ('human')";
+// line up. Currently counts BOTH human and bot sessions (broadest view, and
+// what the funnel originally used); change this ONE line to IN ('human') for a
+// human-only CRO baseline that excludes bot traffic everywhere at once.
+const SESSION_FILTER = "WHERE human_or_bot_session IN ('human', 'bot')";
 
 const QUERIES = {
   // Overview: sessions, conversion, bounce — site-wide with
