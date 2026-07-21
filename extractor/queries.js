@@ -18,7 +18,7 @@ const QUERIES = {
     SHOW sessions, conversion_rate, bounce_rate
     ${SESSION_FILTER}
     TIMESERIES day WITH TOTALS, PERCENT_CHANGE
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
     COMPARE TO previous_period
     ORDER BY day ASC
   `,
@@ -28,7 +28,7 @@ const QUERIES = {
     FROM sales
     SHOW total_sales, orders, average_order_value
     GROUP BY day
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
     ORDER BY day ASC
   `,
 
@@ -39,7 +39,7 @@ const QUERIES = {
     SHOW sessions, conversion_rate, bounce_rate
     ${SESSION_FILTER}
     GROUP BY landing_page_path WITH TOTALS
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
     ORDER BY sessions DESC
     LIMIT 50
   `,
@@ -51,7 +51,7 @@ const QUERIES = {
     SHOW sessions, conversion_rate, bounce_rate
     ${SESSION_FILTER}
     GROUP BY referrer_source
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
   `,
 
   // Per-device: sessions and online_store_visitors ONLY.
@@ -63,7 +63,7 @@ const QUERIES = {
     SHOW sessions, online_store_visitors
     ${SESSION_FILTER}
     GROUP BY session_device_type
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
   `,
 
   // REAL multi-stage funnel — confirmed field names from the
@@ -77,7 +77,7 @@ const QUERIES = {
       sessions_that_completed_checkout, conversion_rate
     ${SESSION_FILTER}
     TIMESERIES day WITH TOTALS, PERCENT_CHANGE
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
     COMPARE TO previous_period
     ORDER BY day ASC
   `,
@@ -90,7 +90,7 @@ const QUERIES = {
     SHOW checkout_conversion_rate
     ${SESSION_FILTER}
     TIMESERIES day
-    SINCE -7d UNTIL today
+    SINCE -15d UNTIL today
   `,
 
   // Core Web Vitals per page — three separate queries, one per metric.
