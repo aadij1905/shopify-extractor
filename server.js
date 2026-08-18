@@ -1,6 +1,9 @@
-require("dotenv").config();
+try {
+  process.loadEnvFile();
+} catch {
+  // no .env file (e.g. env vars injected directly, as on Railway) — fine
+}
 const express = require("express");
-const cors = require("cors");
 const crypto = require("crypto");
 const path = require("path");
 const { verifyHmac } = require("./verifyHmac");
@@ -21,7 +24,16 @@ const app = express();
 // Allow the Review Hub frontend (localhost:5173) to call /api/sync and /api/shop
 // from the browser. OAuth routes are hit via redirect, so CORS is only needed
 // for the JSON API endpoints.
-app.use(cors());
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,HEAD,PUT,PATCH,POST,DELETE");
+  res.header(
+    "Access-Control-Allow-Headers",
+    req.headers["access-control-request-headers"] || "Content-Type"
+  );
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
 
 // ── Webhooks ─────────────────────────────────────────────────────────────────
 // Mounted with express.raw() and BEFORE express.json() below: Shopify's HMAC

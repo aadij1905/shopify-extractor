@@ -51,17 +51,6 @@ async function getPublishedTheme(shopDomain, accessToken) {
   return { id: main.id, name: main.name, role: main.role };
 }
 
-// Asset KEYS only (no content) + their updated_at — cheap, used for caching
-// and for locating files we can't reach via the template graph.
-async function listAssetKeys(shopDomain, accessToken, themeId) {
-  const { assets } = await adminGet(
-    shopDomain,
-    accessToken,
-    `themes/${themeId}/assets.json`
-  );
-  return (assets || []).map((a) => ({ key: a.key, updatedAt: a.updated_at, size: a.size }));
-}
-
 // One asset's CONTENT. Text assets come back on `value`; binary on `attachment`
 // (base64) — we skip binaries, we only care about source files.
 async function getAsset(shopDomain, accessToken, themeId, key) {
@@ -231,12 +220,9 @@ function snippetNamesFromLiquid(content) {
  *   truncated: boolean
  * }}
  */
-async function extractThemeCodeForPage(
-  shopDomain,
-  accessToken,
-  affectedPage,
-  { maxBytesPerFile = 60000, includeLayout = true } = {}
-) {
+const MAX_BYTES_PER_FILE = 60000;
+
+async function extractThemeCodeForPage(shopDomain, accessToken, affectedPage) {
   const theme = await getPublishedTheme(shopDomain, accessToken);
   const base = templateForPage(affectedPage);
   const files = [];
@@ -266,8 +252,8 @@ async function extractThemeCodeForPage(
     if (!asset || fetchedKeys.has(asset.key)) return null;
     fetchedKeys.add(asset.key);
     let content = trimForPrompt(asset.content);
-    if (content.length > maxBytesPerFile) {
-      content = content.slice(0, maxBytesPerFile) + "\n{# …truncated… #}";
+    if (content.length > MAX_BYTES_PER_FILE) {
+      content = content.slice(0, MAX_BYTES_PER_FILE) + "\n{# …truncated… #}";
       truncated = true;
     }
     files.push({ key: asset.key, content, bytes: content.length });
@@ -315,11 +301,9 @@ async function extractThemeCodeForPage(
     if (taken) await pullSnippets(taken);
   }
 
-  if (includeLayout) {
-    const layout = await getAsset(shopDomain, accessToken, theme.id, "layout/theme.liquid");
-    const taken = takeFile(layout);
-    if (taken) await pullSnippets(taken);
-  }
+  const layout = await getAsset(shopDomain, accessToken, theme.id, "layout/theme.liquid");
+  const layoutTaken = takeFile(layout);
+  if (layoutTaken) await pullSnippets(layoutTaken);
 
   return {
     themeId: theme.id,
@@ -331,15 +315,4 @@ async function extractThemeCodeForPage(
   };
 }
 
-module.exports = {
-  getPublishedTheme,
-  listAssetKeys,
-  getAsset,
-  extractThemeCodeForPage,
-  templateForPage,
-  resourceHandleFromPage,
-  getTemplateSuffix,
-  sectionTypesFromJsonTemplate,
-  snippetNamesFromLiquid,
-  trimForPrompt,
-};
+module.exports = { extractThemeCodeForPage };

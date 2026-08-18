@@ -1,25 +1,25 @@
 client_id = "33a6dec34588c871842dce3611a8db11"
 name = "gl_extractor"
-application_url = "https://shopify-extractor-production.up.railway.app"
+application_url = "https://shopify-extractor-production-f613.up.railway.app"
 embedded = true
 
 [access_scopes]
 scopes = "read_reports,read_themes"
 
 [auth]
-redirect_urls = [ "https://shopify-extractor-production.up.railway.app/auth/callback" ]
+redirect_urls = [ "https://shopify-extractor-production-f613.up.railway.app/auth/callback" ]
 
 [webhooks]
 api_version = "2026-07"
 
 [[webhooks.subscriptions]]
 compliance_topics = [ "customers/data_request" ]
-uri = "https://shopify-extractor-production.up.railway.app/webhooks/customers/data_request"
+uri = "https://shopify-extractor-production-f613.up.railway.app/webhooks/customers/data_request"
 
 [[webhooks.subscriptions]]
 compliance_topics = [ "customers/redact" ]
-uri = "https://shopify-extractor-production.up.railway.app/webhooks/customers/redact"
+uri = "https://shopify-extractor-production-f613.up.railway.app/webhooks/customers/redact"
 
 [[webhooks.subscriptions]]
 compliance_topics = [ "shop/redact" ]
-uri = "https://shopify-extractor-production.up.railway.app/webhooks/shop/redact"
+uri = "https://shopify-extractor-production-f613.up.railway.app/webhooks/shop/redact"

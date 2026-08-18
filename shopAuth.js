@@ -39,8 +39,7 @@ async function refreshAccessToken(shopDomain, refreshToken) {
 
 // Returns a usable access token for shopDomain, refreshing first if the
 // stored one is expired/near-expiry. Rows with no access_token_expires_at
-// (non-expiring tokens issued before this feature existed, or the local-only
-// extractor/getToken.js dev flow) are returned as-is.
+// (non-expiring tokens issued before this feature existed) are returned as-is.
 async function getValidAccessToken(shopDomain) {
   const record = getShop(shopDomain);
   if (!record) throw new Error(`Shop not installed: ${shopDomain}`);
